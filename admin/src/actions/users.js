@@ -61,7 +61,7 @@ export async function createUser(formData) {
       html: `<p>Login with: <b>${email}</b> / <b>${tempPassword}</b></p>`
     });
 
-    revalidatePath('/dashboard/users');
+    revalidatePath('/users');
     return { success: true, credentials: { email, password: tempPassword } };
   } catch (e) {
     return { error: "Email already exists or invalid data." };
@@ -71,13 +71,13 @@ export async function createUser(formData) {
 export async function toggleBanUser(userId, status) {
   await connectMongo();
   await User.findByIdAndUpdate(userId, { isBanned: status });
-  revalidatePath('/dashboard/users');
+  revalidatePath('/users');
   return { success: true };
 }
 
 export async function deleteUser(userId) {
   await connectMongo();
   await User.findByIdAndDelete(userId);
-  revalidatePath('/dashboard/users');
+  revalidatePath('/users');
   return { success: true };
 }

@@ -17,7 +17,7 @@ export async function updateProfile(data) {
     image: data.image
   });
   
-  revalidatePath('/dashboard');
+  revalidatePath('/');
   return { success: true };
 }
 

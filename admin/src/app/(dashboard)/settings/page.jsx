@@ -6,13 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { updateProfile, changePassword } from "@/actions/settings";
-import { UploadButton } from "@uploadthing/react"; // Assuming installed
+import { UploadButton } from "@uploadthing/react"; 
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession();
+  // 1. Destructure status to handle loading state
+  const { data: session, status, update } = useSession();
   const [loading, setLoading] = useState(false);
+
+  // 2. Loading State
+  if (status === "loading") {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  // 3. Unauthenticated Guard
+  if (!session) {
+    return <div>Unauthorized</div>;
+  }
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -21,7 +36,7 @@ export default function SettingsPage() {
     
     const res = await updateProfile({
       name: formData.get("name"),
-      image: session?.user?.image // Image handled by UploadThing separately
+      image: session?.user?.image 
     });
 
     if (res.success) {
@@ -56,6 +71,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
+            {/* Safe Access with Optional Chaining */}
             <img 
               src={session?.user?.image || "https://via.placeholder.com/100"} 
               alt="Profile" 
@@ -65,9 +81,12 @@ export default function SettingsPage() {
               <UploadButton
                 endpoint="imageUploader"
                 onClientUploadComplete={async (res) => {
-                  await updateProfile({ name: session.user.name, image: res[0].url });
-                  await update({ image: res[0].url });
-                  toast.success("Photo updated");
+                  // 4. Safety Check inside Callback
+                  if (session?.user) {
+                    await updateProfile({ name: session.user.name, image: res[0].url });
+                    await update({ image: res[0].url });
+                    toast.success("Photo updated");
+                  }
                 }}
                 onUploadError={() => toast.error("Upload failed")}
               />

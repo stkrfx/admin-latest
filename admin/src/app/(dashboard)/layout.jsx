@@ -7,12 +7,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/dashboard/users', label: 'User Management', icon: Users },
-  { href: '/dashboard/admins', label: 'Admin Roles', icon: Shield },
-  { href: '/dashboard/email-templates', label: 'Email Templates', icon: FileText },
-  { href: '/dashboard/faqs', label: 'FAQs', icon: MessageSquare },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/', label: 'Overview', icon: LayoutDashboard },
+  { href: '/users', label: 'User Management', icon: Users },
+  { href: '/admins', label: 'Admin Roles', icon: Shield },
+  { href: '/email-templates', label: 'Email Templates', icon: FileText },
+  { href: '/faqs', label: 'FAQs', icon: MessageSquare },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({ children }) {

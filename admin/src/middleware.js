@@ -17,7 +17,7 @@ export async function middleware(req) {
 
   // 2. Logged In: Redirect to Dashboard
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
   return NextResponse.next();

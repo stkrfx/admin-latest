@@ -1,5 +1,4 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { connectMongo } from "@/lib/db";
 import User from "@/lib/models/User";
 import bcrypt from "bcryptjs";
@@ -13,26 +12,30 @@ const ratelimit = new Ratelimit({
 });
 
 export const authOptions = {
+  // Only Credentials Provider remains
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
     CredentialsProvider({
       name: "Credentials",
-      credentials: { email: {}, password: {} },
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
       async authorize(credentials) {
+        // 1. Rate Limit Check
         const { success } = await ratelimit.limit(`login_${credentials.email}`);
         if (!success) throw new Error("Too many attempts. Try again later.");
 
         await connectMongo();
+        
+        // 2. Find Admin User
         const user = await User.findOne({ email: credentials.email }).select("+password");
         if (!user || !user.password) return null;
 
+        // 3. Verify Password
         const isValid = await bcrypt.compare(credentials.password, user.password);
         if (!isValid) return null;
 
-        // Admin Access Only Check (Optional: enforce here or middleware)
+        // 4. Strict Admin Check
         if (user.role !== 'admin') throw new Error("Access Denied: Admins Only");
 
         return user;

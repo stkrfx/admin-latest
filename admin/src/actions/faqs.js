@@ -17,13 +17,13 @@ export async function saveFAQ(data) {
   } else {
     await FAQ.create(data);
   }
-  revalidatePath('/dashboard/faqs');
+  revalidatePath('/faqs');
   return { success: true };
 }
 
 export async function deleteFAQ(id) {
   await connectMongo();
   await FAQ.findByIdAndDelete(id);
-  revalidatePath('/dashboard/faqs');
+  revalidatePath('/faqs');
   return { success: true };
 }
