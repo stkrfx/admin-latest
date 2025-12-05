@@ -7,17 +7,34 @@ import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 
+// --- NEW FUNCTION ---
+export async function getMyProfile() {
+  const session = await getServerSession(authOptions);
+  if (!session) return null;
+
+  await connectMongo();
+  const user = await User.findById(session.user.id).select("-password").lean();
+  
+  if (!user) return null;
+
+  // Convert _id and dates to string
+  return JSON.parse(JSON.stringify(user));
+}
+
 export async function updateProfile(data) {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized" };
 
   await connectMongo();
-  await User.findByIdAndUpdate(session.user.id, {
-    name: data.name,
-    image: data.image
-  });
   
-  revalidatePath('/');
+  const updateData = {};
+  if (data.name) updateData.name = data.name;
+  if (data.image) updateData.image = data.image;
+
+  await User.findByIdAndUpdate(session.user.id, updateData);
+  
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/settings');
   return { success: true };
 }
 

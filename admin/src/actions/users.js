@@ -2,82 +2,68 @@
 
 import { connectMongo } from "@/lib/db";
 import User from "@/lib/models/User";
+import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { sendEmail } from "@/lib/email"; // Ensure you have this utility from previous steps
 
-export async function getUsers(query = "", role = "") {
+// Helper to check auth
+async function checkAuth() {
   const session = await getServerSession(authOptions);
-  if (!session) return { error: "Unauthorized" };
-
-  await connectMongo();
-  
-  const filter = {};
-  if (query) {
-    filter.$or = [
-      { name: { $regex: query, $options: "i" } },
-      { email: { $regex: query, $options: "i" } }
-    ];
-  }
-  if (role && role !== "all") filter.role = role;
-
-  // Exclude current admin from list to prevent self-ban/delete
-  filter._id = { $ne: session.user.id };
-
-  const users = await User.find(filter).sort({ createdAt: -1 }).lean();
-  return { success: true, users: JSON.parse(JSON.stringify(users)) };
+  if (!session || session.user.role !== 'admin') throw new Error("Unauthorized");
+  return session;
 }
 
-export async function createUser(formData) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'admin') return { error: "Unauthorized" };
-
-  const name = formData.get("name");
-  const email = formData.get("email");
-  const role = formData.get("role");
-  
-  // Generate temp password
-  const tempPassword = Math.random().toString(36).slice(-8) + "Aa1!";
-  const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
+export async function getUsers() {
+  await checkAuth();
   await connectMongo();
+  const users = await User.find({ role: { $ne: 'admin' } }).sort({ createdAt: -1 }).lean();
+  return JSON.parse(JSON.stringify(users));
+}
+
+export async function getAdmins() {
+  const session = await checkAuth();
+  await connectMongo();
+  // Exclude self
+  const admins = await User.find({ role: 'admin', _id: { $ne: session.user.id } }).lean();
+  return JSON.parse(JSON.stringify(admins));
+}
+
+export async function createUser(data) {
+  await checkAuth();
+  await connectMongo();
+  
+  const hashedPassword = await bcrypt.hash(data.password, 10);
   
   try {
-    const newUser = await User.create({
-      name,
-      email,
-      role,
+    await User.create({
+      name: data.name,
+      email: data.email,
       password: hashedPassword,
-      forcePasswordChange: true,
-      isBanned: false
+      role: data.role,
     });
-
-    // Send Credentials via Email
-    await sendEmail({
-      to: email,
-      subject: "Your Admin Portal Credentials",
-      html: `<p>Login with: <b>${email}</b> / <b>${tempPassword}</b></p>`
-    });
-
-    revalidatePath('/users');
-    return { success: true, credentials: { email, password: tempPassword } };
+    revalidatePath('/dashboard/users');
+    revalidatePath('/dashboard/admins');
+    return { success: true };
   } catch (e) {
-    return { error: "Email already exists or invalid data." };
+    return { error: e.message }; // Likely duplicate email
   }
 }
 
-export async function toggleBanUser(userId, status) {
+export async function updateUser(id, data) {
+  await checkAuth();
   await connectMongo();
-  await User.findByIdAndUpdate(userId, { isBanned: status });
-  revalidatePath('/users');
+  await User.findByIdAndUpdate(id, data);
+  revalidatePath('/dashboard/users');
+  revalidatePath('/dashboard/admins');
   return { success: true };
 }
 
-export async function deleteUser(userId) {
+export async function deleteUser(id) {
+  await checkAuth();
   await connectMongo();
-  await User.findByIdAndDelete(userId);
-  revalidatePath('/users');
+  await User.findByIdAndDelete(id);
+  revalidatePath('/dashboard/users');
+  revalidatePath('/dashboard/admins');
   return { success: true };
 }
