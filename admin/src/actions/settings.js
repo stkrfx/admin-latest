@@ -33,8 +33,8 @@ export async function updateProfile(data) {
 
   await User.findByIdAndUpdate(session.user.id, updateData);
   
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/settings');
+  revalidatePath('/');
+  revalidatePath('/settings');
   return { success: true };
 }
 

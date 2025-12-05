@@ -42,8 +42,8 @@ export async function createUser(data) {
       password: hashedPassword,
       role: data.role,
     });
-    revalidatePath('/dashboard/users');
-    revalidatePath('/dashboard/admins');
+    revalidatePath('/users');
+    revalidatePath('/admins');
     return { success: true };
   } catch (e) {
     return { error: e.message }; // Likely duplicate email
@@ -54,8 +54,8 @@ export async function updateUser(id, data) {
   await checkAuth();
   await connectMongo();
   await User.findByIdAndUpdate(id, data);
-  revalidatePath('/dashboard/users');
-  revalidatePath('/dashboard/admins');
+  revalidatePath('/users');
+  revalidatePath('/admins');
   return { success: true };
 }
 
@@ -63,7 +63,7 @@ export async function deleteUser(id) {
   await checkAuth();
   await connectMongo();
   await User.findByIdAndDelete(id);
-  revalidatePath('/dashboard/users');
-  revalidatePath('/dashboard/admins');
+  revalidatePath('/users');
+  revalidatePath('/admins');
   return { success: true };
 }

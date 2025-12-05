@@ -17,13 +17,13 @@ export async function saveTemplate(data) {
   } else {
     await EmailTemplate.create(data);
   }
-  revalidatePath('/dashboard/email-templates');
+  revalidatePath('/email-templates');
   return { success: true };
 }
 
 export async function deleteTemplate(id) {
   await connectMongo();
   await EmailTemplate.findByIdAndDelete(id);
-  revalidatePath('/dashboard/email-templates');
+  revalidatePath('/email-templates');
   return { success: true };
 }
